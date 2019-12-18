@@ -20,7 +20,8 @@ java -jar jarEncrypt-1.0.jar --fileDir ./dirEnTest/ --new
 <br>
 java -jar jarEncrypt-1.0.jar --jars  /home/yang/dirEnTest/hello-world-1.0-SNAPSHOT.jar  --new
 <br>
-3 对class文件进行加密
+3 对class文件进行加密:
+<br>
 java -jar jarEncrypt-1.0.jar --classes  /home/yang/dirEnTest/MainTest.class --new
 ## 2作为第三方jar包使用:
 ```
