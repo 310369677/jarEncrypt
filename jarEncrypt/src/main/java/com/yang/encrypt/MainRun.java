@@ -1,8 +1,10 @@
 package com.yang.encrypt;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.*;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * 描述:
@@ -43,9 +45,9 @@ public class MainRun {
     private static void handleSingleJar(File file, boolean generateNew) {
 
         try {
-            EncryptUtil.encryptJarFile(file, generateNew, new EncryptUtil.DefaultJarFileHandleCallbackImpl() {
+            InnerEncryptUtil.encryptJarFile(file, generateNew, new InnerEncryptUtil.DefaultJarFileHandleCallbackImpl() {
                 @Override
-                public void startHandleJar(File file) {
+                public void startHandleJar(JarFile file) {
                     System.out.println("开始处理:" + file.getName());
                 }
 
@@ -60,7 +62,7 @@ public class MainRun {
                 }
 
                 @Override
-                public void endHandleJar(File file) {
+                public void endHandleJar(JarFile file) {
                     System.out.println("结束处理:" + file.getName());
                 }
             });
@@ -134,15 +136,15 @@ public class MainRun {
 
     private static void handleSingleClass(File file, boolean generateNew) {
         try {
-            EncryptUtil.encryptClassFile(file, generateNew, new EncryptUtil.DefaultClassFileHandleCallbackImpl() {
+            InnerEncryptUtil.encryptClassFile(file, generateNew, null, null, new InnerEncryptUtil.DefaultClassFileHandleCallbackImpl() {
                 @Override
-                public void startHandleClass(File file) {
-                    System.out.println("开始处理:" + file.getName());
+                public void startHandleClass(InputStream in, String name) {
+                    System.out.println("开始处理:" + name);
                 }
 
                 @Override
-                public void endHandleClass(File file) {
-                    System.out.println("处理结束:" + file.getName());
+                public void endHandleClass(InputStream in, String name) {
+                    System.out.println("处理结束:" + name);
                 }
             });
         } catch (Exception e) {

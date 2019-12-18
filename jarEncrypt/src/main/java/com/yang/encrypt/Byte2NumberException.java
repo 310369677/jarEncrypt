@@ -6,7 +6,7 @@ package com.yang.encrypt;
  * 作者:杨川东
  * 日期:18-4-19
  */
-public class Byte2NumberException extends RuntimeException{
+public class Byte2NumberException extends RuntimeException {
 
     private static final long serialVersionUID = 1413388715735384284L;
 

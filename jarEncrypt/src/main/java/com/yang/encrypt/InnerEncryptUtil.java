@@ -13,24 +13,30 @@ import java.util.jar.JarOutputStream;
  * 作者:杨川东
  * 日期:18-4-18
  */
-public class EncryptUtil {
+class InnerEncryptUtil {
 
-    public static void encryptClassFile(File file, boolean generateNew, ClassFileHandleCallback classFileHandleCallback) throws IOException {
+    static void encryptClassFile(File file, boolean generateNew, String newName, String destPath, EncryptApi.ClassFileHandleCallback classFileHandleCallback) throws IOException {
         assertIsClassFile(file);
         FileInputStream fileInputStream = null;
         FileOutputStream fileOutputStream = null;
         //回调函数
-        ClassFileHandleCallback callback = new DefaultClassFileHandleCallbackImpl();
+        EncryptApi.ClassFileHandleCallback callback = new DefaultClassFileHandleCallbackImpl();
         if (classFileHandleCallback != null) {
             callback = classFileHandleCallback;
         }
         String newClassFileName = deleteSuffix(file.getName(), ".class") + "_generate.class";
+        if ((newName != null) && (!"".equals(newName))) {
+            newClassFileName = newName;
+        }
         File newClassFile = new File(file.getParent(), newClassFileName);
+        if ((destPath != null) && (!"".equals(destPath))) {
+            newClassFile = new File(destPath);
+        }
         try {
             fileInputStream = new FileInputStream(file);
             ByteArrayOutputStream fileContentByte = new ByteArrayOutputStream(fileInputStream.available());
             in2out(fileInputStream, fileContentByte);
-            callback.startHandleClass(file);
+            callback.startHandleClass(fileInputStream, file.getName());
             Random random = new Random(System.currentTimeMillis());
             byte[] newContent = encryptClass(fileContentByte.toByteArray(), random.nextInt(0xff) + 1);
             fileOutputStream = new FileOutputStream(newClassFile);
@@ -38,7 +44,8 @@ public class EncryptUtil {
             if (!generateNew && !newClassFile.renameTo(file)) {
                 throw new IOException("写入原始class文件失败:" + file.getName());
             }
-            callback.endHandleClass(file);
+            callback.endHandleClass(fileInputStream, file.getName());
+            close(fileContentByte);
         } finally {
             close(fileOutputStream);
             close(fileInputStream);
@@ -46,7 +53,31 @@ public class EncryptUtil {
     }
 
 
-    public static void encryptJarFile(File file, boolean generateNew, JarFileHandleCallback jarFileHandleCallback) throws IOException {
+    static void encryptClassInputStream(InputStream in, String fileName, String destPath, EncryptApi.ClassFileHandleCallback callback) throws IOException {
+        File file = new File(destPath);
+        if (!file.isDirectory()) {
+            throw new RuntimeException("this is a not directory");
+        }
+        file = new File(destPath, fileName);
+        FileOutputStream fileOutputStream = new FileOutputStream(file);
+        try {
+            ByteArrayOutputStream fileContentByte = new ByteArrayOutputStream(in.available());
+            in2out(in, fileContentByte);
+            callback.startHandleClass(in, fileName);
+            Random random = new Random(System.currentTimeMillis());
+            byte[] newContent = encryptClass(fileContentByte.toByteArray(), random.nextInt(0xff) + 1);
+            fileOutputStream.write(newContent);
+            callback.endHandleClass(in, file.getName());
+            close(fileContentByte);
+        } finally {
+            close(in);
+            close(fileOutputStream);
+        }
+
+    }
+
+
+    static void encryptJarFile(File file, boolean generateNew, EncryptApi.JarFileHandleCallback jarFileHandleCallback) throws IOException {
         assertIsJarFile(file);
         JarFile jarFile = null;
         //原文件名
@@ -54,7 +85,7 @@ public class EncryptUtil {
         //新的文件名
         String newJarName = deleteSuffix(sourceJarName, ".jar") + "_generate.jar";
         //jar文件处理回调函数
-        JarFileHandleCallback callback = new DefaultJarFileHandleCallbackImpl();
+        EncryptApi.JarFileHandleCallback callback = new DefaultJarFileHandleCallbackImpl();
         if (jarFileHandleCallback != null) {
             callback = jarFileHandleCallback;
         }
@@ -67,7 +98,7 @@ public class EncryptUtil {
             newJar = new JarOutputStream(new FileOutputStream(newJarFile));
             Enumeration<JarEntry> entries = jarFile.entries();
             ByteArrayOutputStream outBytes = new ByteArrayOutputStream();
-            callback.startHandleJar(file);
+            callback.startHandleJar(jarFile);
             while (entries.hasMoreElements()) {
                 JarEntry jarEntry = entries.nextElement();
                 String name = jarEntry.getName();
@@ -97,12 +128,33 @@ public class EncryptUtil {
             if (!generateNew && !newJarFile.renameTo(file)) {
                 throw new IOException("写入原始jar文件失败");
             }
-            callback.endHandleJar(file);
+            callback.endHandleJar(jarFile);
         } finally {
             close(newJar);
             close(jarFile);
         }
 
+    }
+
+    /**
+     * 输入流到输出流，自己关闭所有的流
+     *
+     * @param in
+     * @param callback
+     * @return
+     * @throws IOException
+     */
+
+    static OutputStream encryptClassInputStream(InputStream in, EncryptApi.ClassFileHandleCallback callback) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(in.available());
+        in2out(in, out);
+        callback.startHandleClass(in, null);
+        Random random = new Random(System.currentTimeMillis());
+        byte[] newContent = encryptClass(out.toByteArray(), random.nextInt(0xff) + 1);
+        ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
+        arrayOutputStream.write(newContent);
+        close(out);
+        return arrayOutputStream;
     }
 
     private static void in2out(InputStream inputStream, OutputStream outputStream) throws IOException {
@@ -114,45 +166,24 @@ public class EncryptUtil {
     }
 
 
-    public interface JarFileHandleCallback {
-        void startHandleJar(File file);
-
-        void startHandleClass(JarEntry classEntry);
-
-        void endHandleClass(JarEntry classEntry);
-
-        void startHandleOtherFile(JarEntry otherEntry);
-
-        void endHandleOtherFile(JarEntry otherEntry);
-
-        void endHandleJar(File file);
-    }
-
-    public interface ClassFileHandleCallback {
-        void startHandleClass(File file);
-
-        void endHandleClass(File file);
-    }
-
-
-    public static class DefaultClassFileHandleCallbackImpl implements ClassFileHandleCallback {
+    public static class DefaultClassFileHandleCallbackImpl implements EncryptApi.ClassFileHandleCallback {
 
         @Override
-        public void startHandleClass(File file) {
+        public void startHandleClass(InputStream in, String name) {
             //默认空实现，子类重写定义
         }
 
         @Override
-        public void endHandleClass(File file) {
+        public void endHandleClass(InputStream in, String name) {
             //默认空实现，子类重写定义
         }
     }
 
 
-    public static class DefaultJarFileHandleCallbackImpl implements JarFileHandleCallback {
+    public static class DefaultJarFileHandleCallbackImpl implements EncryptApi.JarFileHandleCallback {
 
         @Override
-        public void startHandleJar(File file) {
+        public void startHandleJar(JarFile jarFile) {
             //默认空实现，子类重写定义
         }
 
@@ -177,18 +208,18 @@ public class EncryptUtil {
         }
 
         @Override
-        public void endHandleJar(File file) {
+        public void endHandleJar(JarFile jarFile) {
             //默认空实现，子类重写定义
         }
     }
 
-    private static void assertIsJarFile(File file) {
+    static void assertIsJarFile(File file) {
         if (file == null || !file.exists() || file.isDirectory() || !file.getName().endsWith(".jar")) {
             throw new IllegalArgumentException("这不是一个有效的jar文件");
         }
     }
 
-    private static void assertIsClassFile(File file) {
+    static void assertIsClassFile(File file) {
         if (file == null || !file.exists() || file.isDirectory() || !file.getName().endsWith(".class")) {
             throw new IllegalArgumentException("这不是一个有效的class文件");
         }

@@ -5,14 +5,24 @@ version '1.0-SNAPSHOT'
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'maven'
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
+
+archivesBaseName = 'jarEncrypt'
 
 ext {
     jarName = project.name
     mainClassName = 'com.yang.encrypt.MainRun'
     finagleVersion = '0.1'
+    //发布到仓库用户名
+    publishUserName = "admin"
+    //发布到仓库地址
+    publishUserPassword = "111111"
+    //仓库地址
+    publishURL="http://127.0.0.1:8081/repository/dev/"
 }
+
 
 repositories {
     mavenCentral()
@@ -28,8 +38,29 @@ jar {
     manifest {
         attributes 'Main-Class': 'com.yang.encrypt.MainRun'
         attributes 'Class-Path': someString
+        attributes 'Implementation-Title': "$archivesBaseName"
+        attributes 'Implementation-Version': "$project.version"
+        attributes 'Build-Jdk-Spec': "1.8"
+        attributes "Automatic-Module-Name" : "$archivesBaseName"
+        attributes "Built-By" : "ycd"
     }
 }
+
+
+//上传到nexus
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            repository(url: publishURL) {
+                authentication(userName: "$publishUserName", password: "$publishUserPassword")
+            }
+            pom.version = "$project.version"
+            pom.artifactId = "$archivesBaseName"
+            pom.groupId = "$project.group"
+        }
+    }
+}
+
 
 //清除上次的编译过的文件
 task clearPj(type: Delete) {
