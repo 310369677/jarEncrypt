@@ -59,3 +59,15 @@ java -jar jarEncrypt-1.0.jar --classes  /home/yang/dirEnTest/MainTest.class --ne
             }
         });
 ```
+# jarDecript
+##### usge:
+linux可以下载libjarDecript.so
+<br>
+windows或其他需要自己编译源码
+<br>
+##### 示例:
+java  -agentpath:/home/yang/libjarDecript.so -jar /home/yang/hello-world-1.0-SNAPSHOT.jar
+<br>
+-agentpath:解密包所在的路径
+<br>
+hello-world-1.0-SNAPSHOT.jar 通过jarEncrypt加密后的jar,当然要是这个jar没有被加密也可以正常被运行的。
