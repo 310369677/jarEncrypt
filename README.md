@@ -1,9 +1,9 @@
 # jarEncrypt
 可以针对jar包单个class进行加密
-#基础的用法
-##1作为jar包使用
+# 基础的用法
+## 1作为jar包使用
 usage:java -jar jarEncrypt-1.0.jar [[--fileDir][dirPath1 dirPath2] [--classes][classPath1 classPath2] [--jars][jarPath1 jarPath2]] [--new] 
-#####参数说明:
+##### 参数说明:
 fileDir:需要加密jar或class文件所在的目录
 <br>
 classes:需要的加密的class文件
@@ -11,7 +11,7 @@ classes:需要的加密的class文件
 jars:需要加密的jar包的路径
 <br>
 new:是否会产生新的文件，如果存在这个参数,工具会自动为你生成新的文件，否则将会覆盖原文件.
-#####示例：
+##### 示例：
 1 对文件夹中的jar或者class进行加密:
 <br>
 java -jar jarEncrypt-1.0.jar --fileDir ./dirEnTest/ --new  
@@ -22,7 +22,7 @@ java -jar jarEncrypt-1.0.jar --jars  /home/yang/dirEnTest/hello-world-1.0-SNAPSH
 <br>
 3 对class文件进行加密
 java -jar jarEncrypt-1.0.jar --classes  /home/yang/dirEnTest/MainTest.class --new
-##2作为第三方jar包使用:
+## 2作为第三方jar包使用:
 ```
    EncryptApi encryptApi= JarOrClassEncrypt.newInstance();
         File file=new File("/home/yang/hello-world-1.0-SNAPSHOT.jar");
